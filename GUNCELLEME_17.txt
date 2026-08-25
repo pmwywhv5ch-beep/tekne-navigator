@@ -1,0 +1,18 @@
+Tekne Navigator v17
+
+Kökten düzenlendi:
+- Önceki sürümlerde biriken/çakışan GPS, seyir ve menü fonksiyonları temizlendi.
+- iPhone haritası artık serbestçe sürüklenebilir ve yakınlaştırılabilir.
+- GPS konumuna git gerçek GPS ile çalışır; izin/hata mesajları gösterilir.
+- Seyir simülasyonu GPS gerektirmez. GPS yoksa haritanın merkezinden başlatılabilir.
+- Simülasyon başlangıç ve hedef noktası sabitlenir; güzergâh çizgisi her frame'de yeniden çizilmez.
+- Tekne sembolü güzergâh üzerinde akıcı hareket eder.
+- Harita simülasyon sırasında tekneyi takip eder; Takip kapatılabilir.
+- Seyir sırasında kalan mesafe, kerteriz, hız, ETA ve ilerleme çubuğu canlı güncellenir.
+- Güzergâh üzerinde toplam mesafe ve tekne yanında kalan mesafe etiketleri bulunur.
+- Duraklat/Devam/Durdur ve hedefe varış durumu eklendi.
+- Menüde aynı sekmeye tekrar basınca menü kapanır.
+- Arka plana dokununca menü kapanır.
+- Görsel noktalar sadeleştirildi; tipine göre semboller, isimler zoom'a göre gizlenir.
+- PWA service worker v17; eski cache'ler aktivasyonda temizlenir.
+- v6 localStorage noktaları v17'ye otomatik taşınır; mevcut noktalar korunur.
