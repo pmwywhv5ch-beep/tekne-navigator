@@ -1,0 +1,1 @@
+v18: Harita odaklı arayüz; harita noktası popupında Seyri başlat/Düzenle/Sil; hamburger aynı tuşla aç-kapa; aynı sekmeye tekrar basınca menü kapanır; GPS konumu 🚤 tekne simgesi; simülasyon GPS tarafından ezilmez; seyir alt HUD mesafe/kerteriz/hız/ETA/duraklat/takip/durdur; tekne rota yönüne döner; kurs HUD; PWA cache v18.

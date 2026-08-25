@@ -108,9 +108,20 @@ html,body,#map{touch-action:pan-x pan-y!important;-webkit-user-select:none;user-
  .nav-control-card{z-index:1400;bottom:8px}.nav-control-card>div{backdrop-filter:blur(10px)}
  .mobile-title{font-size:12px}.mobile-topbar button{width:46px;height:46px}
 }
+</style><style>
+#voyageBar{position:absolute;z-index:1003;left:8px;right:8px;bottom:8px;display:none;pointer-events:none}
+#voyageBar.show{display:block}.voy-card{pointer-events:auto;background:rgba(4,14,22,.96);border:1px solid #4d7588;border-radius:16px;padding:9px 11px;box-shadow:0 -4px 22px #000a}.voy-top{display:flex;justify-content:space-between}.voy-name{font-size:16px;font-weight:800}.voy-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px}.voy-stats div{background:#0c2531;border-radius:9px;padding:5px;text-align:center}.voy-stats b{display:block;font-size:14px}.voy-stats small{font-size:9px;opacity:.7}.voy-buttons{display:flex;gap:6px;margin-top:7px}.voy-buttons button{flex:1;padding:8px;border-radius:9px}
+#courseHud{position:absolute;z-index:1003;top:62px;left:50%;transform:translateX(-50%);display:none;pointer-events:none}.course-card{background:rgba(4,14,22,.94);border:1px solid #4d7588;border-radius:11px;padding:6px 12px;text-align:center;box-shadow:0 3px 14px #0008}.course-big{font-size:20px;font-weight:900}.course-small{font-size:9px;opacity:.75}
+.boat-symbol{background:transparent!important;border:0!important}.boat-marker{font-size:31px;line-height:42px;text-shadow:0 2px 5px #000}
+.point-popup-card{min-width:190px}.point-popup-card button{margin:3px 2px;padding:7px 8px;border-radius:8px}
+@media(max-width:700px){#voyageBar{bottom:7px}.voy-stats b{font-size:13px}}
 </style></head>
 <body>
 <div id="map"></div>
+<div id="courseHud"><div class="course-card"><div class="course-big" id="courseBig">000°</div><div class="course-small">KURS / HEADING</div></div></div>
+<div id="voyageBar"><div class="voy-card"><div class="voy-top"><div class="voy-name" id="voyName">🚤 Seyir</div><span id="voyState" class="sim-badge">HAZIR</span></div>
+<div class="voy-stats"><div><b id="vDist">—</b><small>KALAN NM</small></div><div><b id="vBrg">—</b><small>KERTERİZ</small></div><div><b id="vSpeed">—</b><small>HIZ KN</small></div><div><b id="vEta">—</b><small>ETA</small></div></div>
+<div class="voy-buttons"><button id="vPause">⏸ Duraklat</button><button id="vFollow">🧭 Takip</button><button id="vStop" class="danger">■ Durdur</button></div></div></div>
 <div class="nav-control-card" id="navOverlay">
   <div>
     <div class="nav-main" id="navMain">🎯 Hedef seçilmedi.</div>
@@ -356,6 +367,7 @@ function redraw(){
  markers.forEach(m=>map.removeLayer(m));markers=[];
  points.forEach((p,i)=>{
    const m=L.marker([p.lat,p.lon],{icon:makeIcon(p),riseOnHover:true,keyboard:false}).addTo(map);
+   m.bindPopup(pointPopup(i),{autoPan:false,maxWidth:260});
    m.on('click',()=>selectPoint(i));
    m.on('contextmenu',e=>{e.originalEvent?.preventDefault();openEditor(i,e.latlng)});
    markers.push(m);
@@ -370,13 +382,11 @@ function renderList(){
  const q=(document.getElementById('search')?.value||'').toLowerCase();
  document.getElementById('pointList').innerHTML=points.map((p,i)=>({p,i})).filter(x=>(x.p.name||'').toLowerCase().includes(q)||(x.p.type||'').toLowerCase().includes(q)).slice(0,300).map(x=>`<div class="listitem" onclick="selectPoint(${x.i})"><b>${esc(x.p.name||'İsimsiz')}</b> <span class="muted">(${esc(x.p.type||'')})</span><br><span class="muted">${x.p.lat.toFixed(5)}, ${x.p.lon.toFixed(5)}</span></div>`).join('');
 }
-function selectPoint(i){
- target=points[i];weatherPoint=points[i];
- map.flyTo([target.lat,target.lon],Math.max(map.getZoom(),15),{duration:.45});
- markers[i]?.openTooltip?.();
- document.getElementById('editor').innerHTML=`<div class="card"><b>📍 ${esc(target.name||'Nokta')}</b><br><button onclick="openEditor(${i})">✏️ Düzenle</button><button onclick="setTarget()">🎯 Hedef</button><button onclick="goTarget()" class="primary">🚤 Git</button><button onclick="loadWeather()">🌦 Hava</button></div>`;
- updateNav();
-}
+function pointPopup(i){const p=points[i];return `<div class="point-popup-card"><b>📍 ${esc(p.name||"İsimsiz")}</b><br><small>${Number(p.lat).toFixed(6)}, ${Number(p.lon).toFixed(6)}</small><br><button class="primary" onclick="popupStart(${i})">🚤 Seyri başlat</button><button onclick="popupEdit(${i})">✏️ Düzenle</button><button class="danger" onclick="popupDelete(${i})">🗑 Sil</button></div>`}
+function popupStart(i){target=points[i];weatherPoint=points[i];map.closePopup();startVoyage()}
+function popupEdit(i){map.closePopup();openEditor(i)}
+function popupDelete(i){if(confirm(`"${points[i].name||"Nokta"}" silinsin mi?`)){points.splice(i,1);save();redraw();map.closePopup()}}
+function selectPoint(i){target=points[i];weatherPoint=points[i];map.flyTo([target.lat,target.lon],Math.max(map.getZoom(),15),{duration:.35});markers[i]?.bindPopup(pointPopup(i),{autoPan:false,maxWidth:260}).openPopup();updateNav()}
 function openEditor(i,latlng){
  let p=i==null?{id:Date.now(),name:'Yeni Nokta',type:'Mera',lat:latlng.lat,lon:latlng.lng,alt:0,icon:''}:points[i];
  document.getElementById('editor').innerHTML=`<div class="card"><b>${i==null?'➕ Yeni nokta':'✏️ Nokta düzenle'}</b><input id="en" value="${esc(p.name)}" placeholder="Nokta adı"><input id="et" value="${esc(p.type||'Mera')}" placeholder="Tür"><div class="row"><input id="ela" type="number" step="0.000001" value="${p.lat}"><input id="elo" type="number" step="0.000001" value="${p.lon}"></div><textarea id="note" placeholder="Not / açıklama">${esc(p.note||'')}</textarea><button onclick="saveEditor(${i==null?'null':i})" class="primary">💾 Kaydet</button>${i!=null?`<button onclick="deletePoint(${i})" class="danger">🗑 Sil</button>`:''}<button onclick="cancelEditor()">İptal</button></div>`;
@@ -435,51 +445,33 @@ function createBoat(latlng,sim=false){
  return boat;
 }
 function centerOnBoat(){if(!boat)return false;map.panTo(boat.getLatLng(),{animate:true,duration:.35});return true}
+function createBoatMarker(latlng,heading=0){const icon=L.divIcon({className:"boat-symbol",html:`<div class="boat-marker" style="transform:rotate(${heading}deg)">🚤</div>`,iconSize:[42,42],iconAnchor:[21,21]});if(!boat)boat=L.marker(latlng,{icon,zIndexOffset:5000,interactive:false}).addTo(map);else{boat.setLatLng(latlng);boat.setIcon(icon)}return boat}
 function startVoyage(){
- if(!target)return alert('Önce haritadan bir hedef seç.');
- const start=boat?boat.getLatLng():map.getCenter();
- if(!boat)createBoat(start,true);
- voyage.start=L.latLng(start);voyage.end=L.latLng(target.lat,target.lon);voyage.travelledM=0;voyage.lastTs=performance.now();voyage.speed=speedKn();voyage.running=true;voyage.paused=false;voyage.follow=true;
- document.getElementById('followBoat').textContent='🧭 Takip: AÇIK';
- document.getElementById('pauseVoyage').textContent='⏸ Duraklat';
- drawRouteFixed();
- map.fitBounds(L.latLngBounds(voyage.start,voyage.end).pad(.25),{animate:true,maxZoom:16});
- document.getElementById('navInfo').innerHTML='<b class="ok">▶ SİMÜLASYON BAŞLADI</b>';
- if(voyage.raf)cancelAnimationFrame(voyage.raf);voyage.raf=requestAnimationFrame(voyageTick);
+ if(!target)return alert("Önce haritada bir noktaya dokunup hedef seç.");
+ const start=realGpsLatLng?L.latLng(realGpsLatLng):(boat?boat.getLatLng():map.getCenter());
+ createBoatMarker(start,0);
+ voyage.start=L.latLng(start);voyage.end=L.latLng(target.lat,target.lon);voyage.totalM=voyage.start.distanceTo(voyage.end);voyage.travelledM=0;voyage.lastTs=performance.now();voyage.running=true;voyage.paused=false;voyage.follow=true;
+ document.getElementById("voyageBar").classList.add("show");document.getElementById("courseHud").style.display="block";document.getElementById("vPause").textContent="⏸ Duraklat";document.getElementById("vFollow").textContent="🧭 Takip Açık";document.getElementById("voyState").textContent="SEYİR";document.getElementById("voyName").textContent=`🚤 ${esc(target.name||"Hedef")}`;
+ drawRouteFixed();map.setView(start,Math.max(map.getZoom(),15),{animate:true});
+ if(voyage.raf)cancelAnimationFrame(voyage.raf);voyage.raf=requestAnimationFrame(voyageTick)
 }
-function pauseVoyage(){if(!voyage.running)return;voyage.paused=!voyage.paused;document.getElementById('pauseVoyage').textContent=voyage.paused?'▶ Devam':'⏸ Duraklat';if(!voyage.paused){voyage.lastTs=performance.now();voyage.raf=requestAnimationFrame(voyageTick)}}
-function stopVoyage(){voyage.running=false;voyage.paused=false;if(voyage.raf)cancelAnimationFrame(voyage.raf);voyage.raf=null;document.getElementById('pauseVoyage').textContent='⏸ Duraklat';if(realGpsLatLng)createBoat(realGpsLatLng);else if(voyage.start)createBoat(voyage.start);updateNav()}
-function finishVoyage(){voyage.running=false;voyage.paused=false;if(voyage.raf)cancelAnimationFrame(voyage.raf);voyage.raf=null;createBoat(voyage.end,true);voyage.travelledM=voyage.totalM;updateRouteLabels(voyage.end);document.getElementById('navInfo').innerHTML=`<b class="ok">🏁 HEDEFE ULAŞILDI</b><br>${esc(target?.name||'Hedef')} • ${(voyage.totalM/1852).toFixed(2)} NM`;document.getElementById('navProgress').style.width='100%';document.getElementById('navMain').innerHTML=`🏁 ${esc(target?.name||'Hedef')}`;document.getElementById('navSub').textContent='Hedefe ulaşıldı';}
+function pauseVoyage(){if(!voyage.running)return;voyage.paused=!voyage.paused;document.getElementById("vPause").textContent=voyage.paused?"▶ Devam":"⏸ Duraklat";document.getElementById("voyState").textContent=voyage.paused?"DURAKLATILDI":"SEYİR";if(!voyage.paused){voyage.lastTs=performance.now();voyage.raf=requestAnimationFrame(voyageTick)}}
+function stopVoyage(){voyage.running=false;voyage.paused=false;if(voyage.raf)cancelAnimationFrame(voyage.raf);voyage.raf=null;document.getElementById("voyState").textContent="DURDU";if(realGpsLatLng)createBoatMarker(realGpsLatLng,realGpsHeading||0)}
+function finishVoyage(){voyage.running=false;voyage.paused=false;if(voyage.raf)cancelAnimationFrame(voyage.raf);voyage.raf=null;createBoatMarker(voyage.end,voyage.course||0);document.getElementById("voyState").textContent="HEDEFE ULAŞILDI";document.getElementById("vDist").textContent="0.00";document.getElementById("vEta").textContent="0 dk"}
+function toggleVoyageFollow(){voyage.follow=!voyage.follow;document.getElementById("vFollow").textContent=`🧭 Takip ${voyage.follow?"Açık":"Kapalı"}`;if(voyage.follow&&boat)map.setView(boat.getLatLng(),Math.max(map.getZoom(),15),{animate:true})}
 function voyageTick(ts){
  if(!voyage.running||voyage.paused)return;
  const dt=Math.min(.25,Math.max(0,(ts-voyage.lastTs)/1000));voyage.lastTs=ts;
- voyage.speed=speedKn();voyage.travelledM=Math.min(voyage.totalM,voyage.travelledM+voyage.speed*1852/3600*dt);
- const f=voyage.totalM?voyage.travelledM/voyage.totalM:1;
- const a=voyage.start,b=voyage.end;
- const ll=L.latLng(a.lat+(b.lat-a.lat)*f,a.lng+(b.lng-a.lng)*f);
- createBoat(ll,true);updateRouteLabels(ll);updateNav();
- if(voyage.follow)map.panTo(ll,{animate:false});
- if(f>=1){finishVoyage();return}
- voyage.raf=requestAnimationFrame(voyageTick);
+ const speed=Math.max(.5,Math.min(50,Number(document.getElementById("simSpeed")?.value||5)));
+ voyage.travelledM=Math.min(voyage.totalM,voyage.travelledM+speed*1852/3600*dt);
+ const f=voyage.totalM?voyage.travelledM/voyage.totalM:1,a=voyage.start,b=voyage.end,ll=L.latLng(a.lat+(b.lat-a.lat)*f,a.lng+(b.lng-a.lng)*f),course=bearing(ll,b);
+ voyage.course=course;createBoatMarker(ll,course);
+ const rem=Math.max(0,voyage.totalM-voyage.travelledM),nm=rem/1852,eta=nm/speed*60;
+ document.getElementById("vDist").textContent=nm.toFixed(2);document.getElementById("vBrg").textContent=`${Math.round(course)}°`;document.getElementById("vSpeed").textContent=speed.toFixed(1);document.getElementById("vEta").textContent=formatTime(eta);document.getElementById("courseBig").textContent=`${Math.round(course).toString().padStart(3,"0")}°`;
+ updateRouteLabels(ll);if(voyage.follow)map.setView(ll,Math.max(map.getZoom(),15),{animate:false});if(f>=1){finishVoyage();return}voyage.raf=requestAnimationFrame(voyageTick)
 }
-
 function gpsError(e){const msg={1:'Konum izni reddedildi. iPhone Ayarlar → Gizlilik ve Güvenlik → Konum Servisleri bölümünden izin ver.',2:'Konum alınamadı. Açık gökyüzü/GPS sinyali bekleniyor.',3:'GPS zaman aşımı. Tekrar deneyin.'}[e.code]||e.message||'GPS hatası.';document.getElementById('gpsCard').innerHTML=`<b class="warn">📍 GPS</b><br>${esc(msg)}`}
-function updateGPS(pos){
- const c=pos.coords;realGpsLatLng=L.latLng(c.latitude,c.longitude);
- if(!voyage.running)createBoat(realGpsLatLng);
- if(!accuracy)accuracy=L.circle(realGpsLatLng,{radius:c.accuracy,weight:1,fillOpacity:.05}).addTo(map);else{accuracy.setLatLng(realGpsLatLng);accuracy.setRadius(c.accuracy)}
- document.getElementById('speed').textContent=c.speed==null?'-':(c.speed*1.94384).toFixed(1);document.getElementById('course').textContent=c.heading==null?'-':Math.round(c.heading);
- document.getElementById('gpsCard').innerHTML=`GPS: <b class="ok">AKTİF</b><br>${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)}<br>Doğruluk ±${Math.round(c.accuracy)} m`;
- if(!voyage.running && document.getElementById('followBoat')?.dataset.gpsFollow==='1')map.panTo(realGpsLatLng,{animate:true,duration:.35});
- updateNav();updateAnchor();
-}
-function locate(){
- if(!navigator.geolocation)return gpsError({message:'Bu cihazda GPS kullanılamıyor.'});
- document.getElementById('gpsCard').innerHTML='<b class="warn">📍 GPS ALINIYOR…</b><br>Konum izni ve yüksek doğruluk isteniyor.';
- navigator.geolocation.getCurrentPosition(pos=>{updateGPS(pos);createBoat(realGpsLatLng);map.flyTo(realGpsLatLng,16,{duration:.7});document.getElementById('followBoat').dataset.gpsFollow='1';closeMobileMenu()},gpsError,{enableHighAccuracy:true,timeout:20000,maximumAge:0});
-}
-function startGPS(){if(!navigator.geolocation)return;watch=navigator.geolocation.watchPosition(updateGPS,gpsError,{enableHighAccuracy:true,maximumAge:1000,timeout:20000})}
-
+function updateGPS(pos){const c=pos.coords;realGpsLatLng=L.latLng(c.latitude,c.longitude);realGpsHeading=(c.heading!=null&&c.heading>=0)?c.heading:0;if(!voyage.running)createBoatMarker(realGpsLatLng,realGpsHeading);if(!accuracy)accuracy=L.circle(realGpsLatLng,{radius:c.accuracy,weight:1,fillOpacity:.05}).addTo(map);else{accuracy.setLatLng(realGpsLatLng);accuracy.setRadius(c.accuracy)}document.getElementById("speed").textContent=c.speed==null?"-":(c.speed*1.94384).toFixed(1);document.getElementById("course").textContent=c.heading==null?"-":Math.round(c.heading);document.getElementById("gpsCard").innerHTML=`GPS: <b class="ok">AKTİF</b><br>${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)}<br>Doğruluk ±${Math.round(c.accuracy)} m`;updateNav();updateAnchor()}
 function setAnchor(){if(!realGpsLatLng&&!boat)return alert('Önce GPS konumunu alın.');const p=realGpsLatLng||boat.getLatLng();anchor={lat:p.lat,lon:p.lng,time:new Date().toISOString()};localStorage.setItem('tekneNav.v17.anchor',JSON.stringify(anchor));drawAnchor()}
 function releaseAnchor(){anchor=null;localStorage.removeItem('tekneNav.v17.anchor');if(anchorCircle){map.removeLayer(anchorCircle);anchorCircle=null}if(anchorLine){map.removeLayer(anchorLine);anchorLine=null}document.getElementById('anchorStatus').innerHTML='Sanal çapa kapalı.';document.getElementById('anchorData').innerHTML='Çapa kaldırıldı.'}
 function drawAnchor(){if(!anchor)return;const a=L.latLng(anchor.lat,anchor.lon),r=+document.getElementById('anchorRadius').value;if(!anchorCircle)anchorCircle=L.circle(a,{radius:r,weight:2,dashArray:'6 5'}).addTo(map);else{anchorCircle.setLatLng(a);anchorCircle.setRadius(r)}document.getElementById('anchorStatus').innerHTML=`<b class="ok">⚓ SANAL ÇAPA AKTİF</b><br>${anchor.lat.toFixed(6)}, ${anchor.lon.toFixed(6)} • ${new Date(anchor.time).toLocaleTimeString('tr-TR')}`}
@@ -503,21 +495,21 @@ function exportKml(){download('tekne_navigator.kml','<?xml version="1.0"?><kml x
 map.on('contextmenu',e=>{if(addMode)openEditor(null,e.latlng)});
 map.on('click',e=>{if(depthMode)queryDepth(e.latlng)});
 map.on('zoomend',()=>{applyLabelVisibility();testDepthLayers()});
-map.on('resize',()=>map.invalidateSize());
+map.on('resize',()=>map.invalidateSize());map.on('click',()=>{if(window.innerWidth<=700)closeMobileMenu()});
 
-document.getElementById('openMenu')?.addEventListener('click',openMobileMenu);
+document.getElementById('openMenu')?.addEventListener('click',()=>{const p=document.querySelector('.panel');p?.classList.contains('open')?closeMobileMenu():openMobileMenu()});
 document.getElementById('closeMenu')?.addEventListener('click',closeMobileMenu);
 document.getElementById('panelBackdrop')?.addEventListener('click',closeMobileMenu);
 document.getElementById('mobileGps')?.addEventListener('click',()=>{closeMobileMenu();locate()});
 document.getElementById('mobileLayers')?.addEventListener('click',()=>document.querySelector('.leaflet-control-layers')?.classList.toggle('leaflet-control-layers-expanded'));
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>show(b.dataset.s)));
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{const p=document.querySelector('.panel'),id=b.dataset.s;if(p?.classList.contains('open')&&p.dataset.active===id){closeMobileMenu();return}p.dataset.active=id;show(id);closeMobileMenu()}));
 document.getElementById('search').oninput=renderList;
 document.getElementById('all').onclick=()=>{if(markers.length)map.fitBounds(L.featureGroup(markers).getBounds().pad(.08))};
 document.getElementById('gps').onclick=locate;
 document.getElementById('addMode').onclick=()=>{addMode=!addMode;document.getElementById('addMode').textContent=addMode?'✖ Ekleme modunu kapat':'➕ Nokta ekle';closeMobileMenu()};
 document.getElementById('depthMode').onclick=()=>{depthMode=!depthMode;document.getElementById('depthMode').textContent=depthMode?'✖ Derinlik ölçümünü kapat':'🌊 Derinlik ölç';closeMobileMenu()};
 document.getElementById('startVoyage').onclick=startVoyage;
-document.getElementById('pauseVoyage').onclick=pauseVoyage;
+document.getElementById('pauseVoyage').onclick=pauseVoyage;document.getElementById('vPause').onclick=pauseVoyage;document.getElementById('vStop').onclick=stopVoyage;document.getElementById('vFollow').onclick=toggleVoyageFollow;
 document.getElementById('stopVoyage').onclick=stopVoyage;
 document.getElementById('followBoat').onclick=()=>{voyage.follow=!voyage.follow;document.getElementById('followBoat').textContent=`🧭 Takip: ${voyage.follow?'AÇIK':'KAPALI'}`;if(voyage.follow&&boat)map.panTo(boat.getLatLng(),{animate:true,duration:.3})};
 document.getElementById('simSpeed').oninput=updateNav;
@@ -532,7 +524,7 @@ document.getElementById('anchorRadius').onchange=()=>{drawAnchor();updateAnchor(
 try{anchor=JSON.parse(localStorage.getItem('tekneNav.v17.anchor')||localStorage.getItem('tekneNav.v7.anchor')||'null')}catch(e){anchor=null}
 redraw();testDepthLayers();startGPS();setTimeout(()=>map.invalidateSize(),300);
 if(anchor)drawAnchor();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=17',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=18',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 
 async function queryDepth(latlng){
   const size=101, bounds=map.getBounds(), sw=bounds.getSouthWest(), ne=bounds.getNorthEast();
