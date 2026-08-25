@@ -1,0 +1,15 @@
+v15 GELİŞTİRMELER
+- GPS butonu artık mevcut konuma gerçekten haritayı merkezler.
+- GPS yüksek doğruluk + taze konum ister.
+- Hedef seçimi sonrası "🎯 Hedefe git" eklendi.
+- Hedef mesafesi NM, kerteriz, hız ve ETA hesaplanıyor.
+- Gerçek GPS hızı varsa ETA onu kullanıyor; yoksa kullanıcı ayarlı tahmini hız kullanılıyor.
+- Haritada hedefe gidiş çizgisi.
+- Alt tarafta dinamik hedef mini paneli.
+- Hedefi bırakma.
+- Sanal çapa alarmı için kullanıcı dokunuşuyla WebAudio etkinleştirme.
+- Sürüklenmede sesli alarm, desteklenen cihazlarda titreşim ve ekran alarmı.
+- Alarmı susturma.
+- iOS Safari'nin Vibration API'yi desteklememesi durumunda sesli + görsel alarm çalışır; fiziksel titreşim web uygulaması tarafından garanti edilemez.
+- Çapa localStorage anahtarı v15'e taşındı, eski v7 kaydı okunabiliyor.
+- Harita hareketi kullanıcı kontrolünde kalır.
