@@ -1,0 +1,13 @@
+v19 güvenli yeniden yapılandırma:
+- v18'deki kırılgan çekirdek değişiklikler geri alınarak v17 çalışan tabanı korundu.
+- Harita noktası popup: Seyri başlat / Düzenle / Sil.
+- Seyir için bağımsız v19 simülasyon motoru; mevcut eski seyir koduyla çakışmaz.
+- Gerçek GPS konumu simülasyonu ezmez.
+- Harita üzerinde hareket eden 🚤 tekne.
+- Rota çizgisi ve toplam NM.
+- Seyir alt HUD: kalan mesafe, kerteriz, hız, ETA, duraklat/takip/durdur.
+- Üst kurs göstergesi.
+- Hamburger aynı tuşla aç/kapa.
+- Mobilde haritaya dokununca menü kapanır.
+- Service Worker cache v19.
+- index.html JavaScript sözdizimi kontrol edildi.
