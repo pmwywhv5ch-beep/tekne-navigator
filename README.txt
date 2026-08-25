@@ -63,3 +63,13 @@ v12:
 - EMODnet WMS contours katmanı version 1.3.0 ile yeniden bağlandı.
 - Renkli batimetri katmanları da 1.3.0'a geçirildi.
 - Not: EMODnet'in genel contours ürünü genelleştirilmiş 50/100/200/500/... m aralıklarını kullanır; bu nedenle 1/2/5/10 m izobat üretmez. Sık izobat için ayrı yüksek çözünürlüklü DTM işleme gerekir.
+
+v13 MOBİL ARAYÜZ:
+- iPhone'da ana menü varsayılan olarak gizli; ☰ ile açılır.
+- GPS ve harita katmanları için ayrı yüzen butonlar.
+- Katman kontrolü mobilde varsayılan kapalı.
+- Panel kapatma butonu.
+- Harita tam ekran; sabit büyük panel ekranı kaplamıyor.
+- Nokta isimleri düşük zoomda gizli, nokta sembolleri de yoğun zoomlarda grid bazlı seyreltiliyor.
+- redraw artık haritayı her işlemde otomatik fit etmiyor; harita kullanıcı hareketiyle sabit kalıyor.
+- PWA cache v13'e yükseltildi.
