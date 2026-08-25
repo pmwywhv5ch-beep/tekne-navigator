@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Tekne Navigator v14</title>
+<title>Tekne Navigator v16</title>
 <link rel="manifest" href="./manifest.json"><meta name="theme-color" content="#06131d"><link rel="apple-touch-icon" href="./icon-192.png"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}html,body,#map{height:100%;margin:0}body{font-family:Arial,sans-serif;background:#06131d;color:#fff;overflow:hidden}
@@ -68,9 +68,40 @@ h1{font-size:20px;margin:0}.muted{color:#9db4bf;font-size:11px}.tabs{display:gri
   .panel{display:block}
 }
 </style>
+
+<style>
+html,body,#map{touch-action:pan-x pan-y!important;-webkit-user-select:none;user-select:none}
+#map{z-index:1;overscroll-behavior:none}
+.leaflet-container{touch-action:pan-x pan-y!important;-webkit-tap-highlight-color:transparent}
+.nav-control-card{position:absolute;z-index:1002;left:10px;right:10px;bottom:12px;pointer-events:none}
+.nav-control-card>div{pointer-events:auto;max-width:620px;margin:auto;background:rgba(4,14,22,.95);border:1px solid #4d7588;border-radius:15px;padding:9px 11px;box-shadow:0 5px 22px #000a}
+.nav-main{font-size:19px;font-weight:800}
+.nav-sub{font-size:12px;opacity:.9;margin-top:3px}
+.nav-progress{height:6px;background:#173642;border-radius:6px;overflow:hidden;margin-top:7px}
+.nav-progress>i{display:block;height:100%;width:0;background:#32b4e8;border-radius:6px;transition:width .2s}
+.route-label{
+ background:rgba(3,13,19,.96);border:1px solid #57b6db;color:#fff;
+ border-radius:8px;padding:4px 7px;font-size:11px;font-weight:800;white-space:nowrap;
+ box-shadow:0 2px 8px #0009;
+}
+.route-label:before{display:none!important}
+.sim-badge{display:inline-block;padding:2px 6px;border-radius:8px;background:#8a5a13;color:#fff;font-size:10px;margin-left:5px}
+@media(max-width:700px){
+ .nav-control-card{left:7px;right:7px;bottom:9px}
+ .nav-main{font-size:17px}
+ .nav-sub{font-size:11px}
+}
+</style>
 </head>
 <body>
 <div id="map"></div>
+<div class="nav-control-card" id="navOverlay">
+  <div>
+    <div class="nav-main" id="navMain">🎯 Hedef seçilmedi.</div>
+    <div class="nav-sub" id="navSub">Mesafe — • Kerteriz — • ETA —</div>
+    <div class="nav-progress"><i id="navProgress"></i></div>
+  </div>
+</div>
 <div class="panel-backdrop" id="panelBackdrop"></div>
 <div class="mobile-topbar">
   <div class="mleft"><button id="openMenu" aria-label="Menü">☰</button></div>
@@ -82,7 +113,7 @@ h1{font-size:20px;margin:0}.muted{color:#9db4bf;font-size:11px}.tabs{display:gri
 </div>
 <div class="panel">
 <button id="closeMenu" class="mobile-close-btn" aria-label="Kapat">✕</button>
-<h1>🚤 Tekne Navigator <span class="badge">v6</span></h1>
+<h1>🚤 Tekne Navigator <span class="badge">v16</span></h1>
 <div class="muted">506 navigasyon noktası • düzenlenebilir</div>
 <div class="tabs">
 <button class="tab active" data-s="points">📍 Noktalar</button>
@@ -99,9 +130,29 @@ h1{font-size:20px;margin:0}.muted{color:#9db4bf;font-size:11px}.tabs{display:gri
 </section>
 
 <section id="nav" class="section">
-<div id="gpsCard" class="card">GPS bekleniyor...</div>
-<div id="targetCard" class="card">Hedef seçilmedi.</div>
-<div class="card"><b>Rota planlama</b><br><span class="muted">Haritada bir noktaya tıklayarak hedef seç. Çoklu rota özelliği bir sonraki adım için hazır.</span><div id="routeInfo">Rota boş.</div><button id="clearRoute">Rotayı temizle</button></div>
+<div id="gpsCard" class="card">📍 GPS bekleniyor...</div>
+<div id="targetCard" class="card">🎯 Hedef seçilmedi.</div>
+<div class="card">
+<b>🚤 Seyir</b>
+<div class="row">
+<label style="flex:1">Hız (kn)<input id="simSpeed" type="number" min="0.5" max="50" step="0.5" value="5"></label>
+</div>
+<div id="navInfo" class="card">Hedef seçip <b>Seyri başlat</b> düğmesine bas.</div>
+<div class="row">
+<button id="startVoyage" class="primary">▶ Seyri başlat</button>
+<button id="pauseVoyage">⏸ Duraklat</button>
+<button id="stopVoyage" class="danger">■ Durdur</button>
+</div>
+<div class="row">
+<button id="followBoat">🧭 Tekneyi takip et: AÇIK</button>
+</div>
+</div>
+<div class="card">
+<b>📏 Güzergâh</b>
+<div class="muted">Çizgi üzerindeki etiket toplam kalan mesafeyi gösterir. Seyir ilerledikçe mesafe ve ETA canlı güncellenir.</div>
+<div id="routeInfo">Rota boş.</div>
+<button id="clearRoute">Rotayı temizle</button>
+</div>
 </section>
 
 <section id="weather" class="section">
@@ -214,7 +265,7 @@ function redraw(){
   let m=ic?L.marker([p.lat,p.lon],{icon:ic}):L.circleMarker([p.lat,p.lon],{radius:6,weight:1,fillOpacity:.9});
   m.addTo(map);
   if(!ic)m.bindTooltip(esc(p.name||"İsimsiz"),{permanent:true,direction:"top",className:"point-label",offset:[0,-4]});
-  m.on("click",()=>selectPoint(i));m.on("contextmenu",e=>openEditor(i,e.latlng));
+  m.on("click",()=>selectPoint(i));m.on("contextmenu",e=>{if(e.originalEvent)e.originalEvent.preventDefault();openEditor(i,e.latlng)});
   markers.push(m);
  });
  renderList();
@@ -226,7 +277,7 @@ function applyLabelVisibility(){
   document.querySelectorAll(".point-icon-name,.point-label").forEach(el=>el.classList.toggle("hidden-label",hide));
 }
 function renderList(){let q=document.getElementById("search").value.toLowerCase();document.getElementById("pointList").innerHTML=points.map((p,i)=>({p,i})).filter(x=>(x.p.name||"").toLowerCase().includes(q)||(x.p.type||"").toLowerCase().includes(q)).slice(0,300).map(x=>`<div class="listitem" onclick="selectPoint(${x.i})"><b>${esc(x.p.name||"İsimsiz")}</b> <span class="muted">(${esc(x.p.type)})</span><br><span class="muted">${x.p.lat.toFixed(5)}, ${x.p.lon.toFixed(5)}</span></div>`).join("")}
-function selectPoint(i){target=points[i];weatherPoint=points[i];map.setView([target.lat,target.lon],15);markers[i].openTooltip();document.getElementById("editor").innerHTML=`<div class="card"><b>${esc(target.name||"Nokta")}</b><br><button onclick="openEditor(${i})">✏️ Düzenle</button><button onclick="setTarget()">🎯 Hedef</button><button onclick="loadWeather()">🌦 Hava</button></div>`;updateTarget()}
+function selectPoint(i){target=points[i];weatherPoint=points[i];map.setView([target.lat,target.lon],15);markers[i].openTooltip();document.getElementById("editor").innerHTML=`<div class="card"><b>${esc(target.name||"Nokta")}</b><br><button onclick="openEditor(${i})">✏️ Düzenle</button><button onclick="setTarget()">🎯 Hedef</button><button onclick="goTarget()" class="primary">🚤 Git</button><button onclick="loadWeather()">🌦 Hava</button></div>`;updateTarget()}
 function openEditor(i,latlng){
  let p=i==null?{id:Date.now(),name:"Yeni Nokta",type:"Mera",lat:latlng.lat,lon:latlng.lng,alt:0,icon:""}:points[i];
  document.getElementById("editor").innerHTML=`<div class="card"><b>${i==null?"➕ Yeni nokta":"✏️ Nokta düzenle"}</b>
@@ -277,11 +328,158 @@ async function queryDepth(latlng){
   }
 }
 
-function updateTarget(){if(!target||!boat)return;let a=boat.getLatLng(),b=L.latLng(target.lat,target.lon),d=a.distanceTo(b),br=bearing(a,b);if(routeLine)map.removeLayer(routeLine);routeLine=L.polyline([a,b],{dashArray:"8 8",weight:4}).addTo(map);document.getElementById("targetCard").innerHTML=`<b>🎯 ${esc(target.name)}</b><br>Mesafe: ${(d/1852).toFixed(2)} NM • Kerteriz: ${br.toFixed(0)}°`}
+
+let voyageRunning=false,voyagePaused=false,voyageRaf=null,voyageStart=null,voyageStartLatLng=null,
+    voyageTotalM=0,voyageTravelledM=0,voyageLastTs=0,followBoat=true,routeLabel=null;
+
+function fmtTime(mins){
+  if(!Number.isFinite(mins))return "—";
+  mins=Math.max(0,Math.round(mins));
+  if(mins<60)return `${mins} dk`;
+  return `${Math.floor(mins/60)} sa ${mins%60} dk`;
+}
+function currentSimSpeed(){
+  const n=Number(document.getElementById("simSpeed")?.value||5);
+  return Math.max(.5,Math.min(50,Number.isFinite(n)?n:5));
+}
+function routeDistance(a,b){return L.latLng(a).distanceTo(L.latLng(b));}
+function clearRouteVisuals(){
+  if(routeLine){map.removeLayer(routeLine);routeLine=null}
+  if(routeLabel){map.removeLayer(routeLabel);routeLabel=null}
+}
+function drawRoute(){
+  if(!target||!boat){clearRouteVisuals();return}
+  clearRouteVisuals();
+  const a=boat.getLatLng(),b=L.latLng(target.lat,target.lon);
+  const d=a.distanceTo(b); voyageTotalM=d;
+  routeLine=L.polyline([a,b],{color:"#27b7e8",weight:5,opacity:.9,dashArray:"12 8"}).addTo(map);
+  const mid=L.latLng((a.lat+b.lat)/2,(a.lng+b.lng)/2);
+  routeLabel=L.marker(mid,{interactive:false,icon:L.divIcon({
+    className:"",html:`<div class="route-label">📏 ${(d/1852).toFixed(2)} NM</div>`,
+    iconSize:null,iconAnchor:[0,0]
+  })}).addTo(map);
+}
+function updateTarget(){
+  const targetCard=document.getElementById("targetCard");
+  if(!target||!boat){
+    if(targetCard)targetCard.innerHTML=target?`<b>🎯 ${esc(target.name||"Hedef")}</b><br><span class="warn">GPS konumu bekleniyor.</span>`:"🎯 Hedef seçilmedi.";
+    document.getElementById("navOverlay")?.classList.remove("show");
+    return;
+  }
+  const a=boat.getLatLng(),b=L.latLng(target.lat,target.lon),d=a.distanceTo(b),nm=d/1852,br=bearing(a,b),sp=currentSimSpeed(),eta=(nm/sp)*60;
+  targetCard.innerHTML=`<b>🎯 ${esc(target.name||"Hedef")}</b><br>Mesafe: <b>${nm.toFixed(2)} NM</b> • Kerteriz: <b>${br.toFixed(0)}°</b>`;
+  document.getElementById("navInfo").innerHTML=`<b>Kalan:</b> ${nm.toFixed(2)} NM &nbsp; <b>Kerteriz:</b> ${br.toFixed(0)}°<br><b>Hız:</b> ${sp.toFixed(1)} kn &nbsp; <b>ETA:</b> ${fmtTime(eta)}`;
+  document.getElementById("navMain").innerHTML=`🎯 ${esc(target.name||"Hedef")}${voyageRunning?'<span class="sim-badge">SEYİR</span>':""}`;
+  document.getElementById("navSub").textContent=`Mesafe ${nm.toFixed(2)} NM • Kerteriz ${br.toFixed(0)}° • ETA ${fmtTime(eta)}`;
+  document.getElementById("navProgress").style.width=`${voyageTotalM>0?Math.max(0,Math.min(100,(1-d/voyageTotalM)*100)):0}%`;
+  document.getElementById("navOverlay").classList.add("show");
+  drawRoute();
+}
+function startVoyage(){
+  if(!target){alert("Önce bir hedef seç.");return}
+  if(!boat){
+    locate();
+    alert("Önce GPS konumu alınmalı. GPS geldikten sonra Seyri başlat'a tekrar bas.");
+    return;
+  }
+  if(voyageRunning){voyagePaused=false;return}
+  voyageStartLatLng=boat.getLatLng();
+  voyageTotalM=routeDistance(voyageStartLatLng,{lat:target.lat,lng:target.lon});
+  if(voyageTotalM<5){finishVoyage();return}
+  voyageTravelledM=0;voyageStart=performance.now();voyageLastTs=performance.now();
+  voyageRunning=true;voyagePaused=false;followBoat=true;
+  document.getElementById("followBoat").textContent="🧭 Tekneyi takip et: AÇIK";
+  map.setView(voyageStartLatLng,Math.max(map.getZoom(),15),{animate:true});
+  voyageRaf=requestAnimationFrame(voyageTick);
+  updateTarget();
+}
+function pauseVoyage(){
+  if(!voyageRunning)return;
+  voyagePaused=!voyagePaused;
+  document.getElementById("pauseVoyage").textContent=voyagePaused?"▶ Devam":"⏸ Duraklat";
+  if(!voyagePaused){voyageLastTs=performance.now();voyageRaf=requestAnimationFrame(voyageTick)}
+}
+function stopVoyage(){
+  voyageRunning=false;voyagePaused=false;
+  if(voyageRaf)cancelAnimationFrame(voyageRaf);voyageRaf=null;
+  document.getElementById("pauseVoyage").textContent="⏸ Duraklat";
+  if(boat && voyageStartLatLng)boat.setLatLng(voyageStartLatLng);
+  if(target)updateTarget();
+}
+function finishVoyage(){
+  voyageRunning=false;voyagePaused=false;
+  if(voyageRaf)cancelAnimationFrame(voyageRaf);
+  if(target&&boat)boat.setLatLng([target.lat,target.lon]);
+  voyageTravelledM=voyageTotalM;
+  document.getElementById("navInfo").innerHTML=`<b class="ok">🏁 HEDEFE ULAŞILDI</b><br>${esc(target?.name||"Hedef")} • ${ (voyageTotalM/1852).toFixed(2)} NM`;
+  document.getElementById("navMain").innerHTML=`🏁 ${esc(target?.name||"Hedef")} — ULAŞILDI`;
+  document.getElementById("navSub").textContent=`Mesafe ${(voyageTotalM/1852).toFixed(2)} NM`;
+  document.getElementById("navProgress").style.width="100%";
+  drawRoute();
+}
+function voyageTick(ts){
+  if(!voyageRunning||voyagePaused)return;
+  const dt=Math.max(0,(ts-voyageLastTs)/1000); voyageLastTs=ts;
+  const speedMps=currentSimSpeed()*1852/3600;
+  voyageTravelledM+=speedMps*dt;
+  const f=Math.min(1,voyageTravelledM/voyageTotalM);
+  const a=L.latLng(voyageStartLatLng),b=L.latLng(target.lat,target.lon);
+  const ll=L.latLng(a.lat+(b.lat-a.lat)*f,a.lng+(b.lng-a.lng)*f);
+  if(boat)boat.setLatLng(ll);
+  if(followBoat)map.setView(ll,Math.max(map.getZoom(),15),{animate:false});
+  updateTarget();
+  if(f>=1){finishVoyage();return}
+  voyageRaf=requestAnimationFrame(voyageTick);
+}
+function setTarget(){
+  if(!target){alert("Önce bir nokta seç.");return}
+  show("nav");closeMobileMenu?.();updateTarget();
+}
+function goTarget(){
+  if(!target){alert("Önce bir hedef seç.");return}
+  if(!boat){locate();return}
+  show("nav");closeMobileMenu?.();map.setView(boat.getLatLng(),Math.max(map.getZoom(),15),{animate:true});updateTarget();
+}
+function stopTarget(){
+  stopVoyage();target=null;clearRouteVisuals();
+  document.getElementById("targetCard").innerHTML="🎯 Hedef bırakıldı.";
+  document.getElementById("navInfo").innerHTML="Hedef seçilmedi.";
+  document.getElementById("navOverlay").classList.remove("show");
+}
 function bearing(a,b){let r=Math.PI/180,p1=a.lat*r,p2=b.lat*r,dl=(b.lng-a.lng)*r,y=Math.sin(dl)*Math.cos(p2),x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);return(Math.atan2(y,x)/r+360)%360}
 function updateGPS(pos){let c=pos.coords;if(!boat)boat=L.marker([c.latitude,c.longitude]).addTo(map).bindPopup("🚤 Tekne");else boat.setLatLng([c.latitude,c.longitude]);if(!accuracy)accuracy=L.circle([c.latitude,c.longitude],{radius:c.accuracy,weight:1}).addTo(map);else{accuracy.setLatLng([c.latitude,c.longitude]);accuracy.setRadius(c.accuracy)}document.getElementById("speed").textContent=c.speed==null?"-":(c.speed*1.94384).toFixed(1);document.getElementById("course").textContent=c.heading==null?"-":Math.round(c.heading);document.getElementById("gpsCard").innerHTML=`GPS: <b class="ok">AKTİF</b><br>${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)}<br>Doğruluk ±${Math.round(c.accuracy)} m`;updateTarget();updateAnchor()}
-function locate(){navigator.geolocation.getCurrentPosition(updateGPS,e=>alert(e.message),{enableHighAccuracy:true,timeout:10000})}
-function startGPS(){if(navigator.geolocation)watch=navigator.geolocation.watchPosition(updateGPS,()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:10000})}
+function gpsError(e){
+  const msg={1:"Konum izni reddedildi. iPhone: Ayarlar → Gizlilik ve Güvenlik → Konum Servisleri → Safari/uygulama için izin ver.",
+             2:"Konum alınamadı. Açık gökyüzü ve GPS sinyali bekleniyor.",
+             3:"GPS zaman aşımına uğradı. Tekrar deneyin."}[e.code]||e.message||"Bilinmeyen GPS hatası.";
+  const el=document.getElementById("gpsCard");
+  if(el)el.innerHTML=`<b class="warn">📍 GPS BEKLENİYOR</b><br>${esc(msg)}`;
+}
+function centerOnBoat(){
+  if(!boat)return false;
+  map.stop();
+  map.setView(boat.getLatLng(),Math.max(map.getZoom(),16),{animate:true,duration:.5});
+  return true;
+}
+function locate(){
+  if(!navigator.geolocation){
+    gpsError({message:"Bu cihazda konum servisi kullanılamıyor."}); return;
+  }
+  const el=document.getElementById("gpsCard");
+  if(el)el.innerHTML='<b class="warn">📍 GPS ALINIYOR…</b><br>Yüksek doğruluklu konum isteniyor.';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    updateGPS(pos);
+    centerOnBoat();
+    closeMobileMenu?.();
+  },gpsError,{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+function startGPS(){
+  if(!navigator.geolocation)return;
+  watch=navigator.geolocation.watchPosition(pos=>{
+    updateGPS(pos);
+    if(voyageRunning && followBoat) centerOnBoat();
+  },gpsError,{enableHighAccuracy:true,maximumAge:1000,timeout:20000});
+}{if(navigator.geolocation)watch=navigator.geolocation.watchPosition(updateGPS,()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:10000})}
 
 
 function setAnchor(){
@@ -383,16 +581,33 @@ function renderForecast(d){
 function download(name,text,type){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
 function exportJSON(){download("tekne_navigator.json",JSON.stringify({points},null,2),"application/json")}
 function exportKml(){let p=points.map(x=>`<Placemark><name>${esc(x.name)}</name><Point><coordinates>${x.lon},${x.lat},${x.alt||0}</coordinates></Point></Placemark>`).join("");download("tekne_navigator.kml",`<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${p}</Document></kml>`,"application/vnd.google-earth.kml+xml")}
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>show(b.dataset.s));document.getElementById("search").oninput=renderList;document.getElementById("all").onclick=()=>map.fitBounds(L.featureGroup(markers).getBounds().pad(.08));document.getElementById("gps").onclick=locate;document.getElementById("depthMode").onclick=()=>{depthMode=!depthMode;document.getElementById("depthMode").textContent=depthMode?"✖ Derinlik kapat":"🌊 Derinlik ölç";alert(depthMode?"Haritada bir yere tıkla.":"Derinlik ölçümü kapatıldı.")};document.getElementById("addMode").onclick=()=>{addMode=!addMode;document.getElementById("addMode").textContent=addMode?"✖ Haritada iptal":"➕ Nokta ekle";alert(addMode?"Haritada boş bir yere sağ tıkla.":"Ekleme kapatıldı.")};document.getElementById("clearRoute").onclick=()=>{route=[];if(routeLine)map.removeLayer(routeLine);document.getElementById("routeInfo").textContent="Rota boş."};document.getElementById("weatherLoad").onclick=loadWeather;document.getElementById("exportJson").onclick=exportJSON;document.getElementById("exportKml").onclick=exportKml;document.getElementById("reset").onclick=()=>{if(confirm("Yaptığın tüm nokta değişiklikleri sıfırlansın mı?")){localStorage.removeItem(POINT_KEY);location.reload()}};
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{show(b.dataset.s);if(window.innerWidth<=700)closeMobileMenu()});
+document.getElementById("search").oninput=renderList;
+document.getElementById("all").onclick=()=>{if(markers.length)map.fitBounds(L.featureGroup(markers).getBounds().pad(.08))};
+document.getElementById("gps").onclick=locate;
+document.getElementById("startVoyage").onclick=startVoyage;
+document.getElementById("pauseVoyage").onclick=pauseVoyage;
+document.getElementById("stopVoyage").onclick=stopVoyage;
+document.getElementById("followBoat").onclick=()=>{followBoat=!followBoat;document.getElementById("followBoat").textContent=`🧭 Tekneyi takip et: ${followBoat?"AÇIK":"KAPALI"}`;if(followBoat)centerOnBoat()};
+document.getElementById("simSpeed").oninput=updateTarget;
+document.getElementById("clearRoute").onclick=()=>{stopVoyage();clearRouteVisuals();document.getElementById("routeInfo").textContent="Rota boş."};
+document.getElementById("weatherLoad").onclick=loadWeather;
+document.getElementById("exportJson").onclick=exportJSON;
+document.getElementById("exportKml").onclick=exportKml;
+document.getElementById("reset").onclick=()=>{if(confirm("Yaptığın tüm nokta değişiklikleri sıfırlansın mı?")){localStorage.removeItem(POINT_KEY);location.reload()}};
 document.getElementById("setAnchor").onclick=setAnchor;
 document.getElementById("releaseAnchor").onclick=releaseAnchor;
 document.getElementById("anchorRadius").onchange=()=>{drawAnchor();updateAnchor()};
 try{anchor=JSON.parse(localStorage.getItem("tekneNav.v7.anchor")||"null")}catch(e){anchor=null}
-redraw();startGPS();testDepthLayers();map.on("zoomend",()=>{testDepthLayers();applyLabelVisibility();});if(anchor)drawAnchor();
+redraw();startGPS();testDepthLayers();
+map.on("zoomend",()=>{testDepthLayers();applyLabelVisibility()});
+map.on("resize",()=>map.invalidateSize({debounceMoveend:true}));
+setTimeout(()=>map.invalidateSize(),300);
+if(anchor)drawAnchor();
 </script>
 <script>
 if("serviceWorker" in navigator){
- navigator.serviceWorker.register("./sw.js?v=14",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
+ navigator.serviceWorker.register("./sw.js?v=16",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
 }
 </script><script>
 document.getElementById("openMenu")?.addEventListener("click",openMobileMenu);
@@ -404,6 +619,7 @@ document.getElementById("mobileLayers")?.addEventListener("click",()=>{
   if(el) el.classList.toggle("leaflet-control-layers-expanded");
 });
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{if(window.innerWidth<=700)closeMobileMenu()}));
-window.addEventListener("resize",()=>{if(window.innerWidth>700)closeMobileMenu();});
+window.addEventListener("resize",()=>{if(window.innerWidth>700)closeMobileMenu();setTimeout(()=>map.invalidateSize(),100);});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMobileMenu?.()});
 </script></body>
 </html>

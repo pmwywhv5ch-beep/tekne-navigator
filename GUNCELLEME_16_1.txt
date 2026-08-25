@@ -1,0 +1,9 @@
+v16.1:
+- GPS watch artık simülasyon sırasında sanal tekne işaretçisini ezmiyor.
+- Gerçek GPS konumu ayrı tutuluyor.
+- Simülasyon teknesi rota üzerinde ilerliyor.
+- Güzergâh toplam mesafesi her animasyon karesinde sıfırlanmıyor.
+- Güzergâh etiketi simülasyonda kalan mesafeyi gösteriyor.
+- Seyir panelinde SIMÜLASYON durumu.
+- Simülasyon durdurulunca gerçek GPS konumuna geri dönüyor.
+- iPhone touch-action güçlendirildi.

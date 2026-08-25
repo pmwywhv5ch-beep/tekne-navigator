@@ -1,4 +1,4 @@
-const CACHE='tekne-navigator-v15';
+const CACHE='tekne-navigator-v16';
 const APP=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./waypoints.json'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
