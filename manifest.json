@@ -1,0 +1,25 @@
+{
+  "name": "Tekne Navigator",
+  "short_name": "Tekne Navigator",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#06131d",
+  "theme_color": "#06131d",
+  "description": "Tekne navigasyon, mera, GPS, sanal çapa, Bft hava ve batimetri uygulaması.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
