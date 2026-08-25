@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Tekne Navigator v6</title>
+<title>Tekne Navigator v14</title>
 <link rel="manifest" href="./manifest.json"><meta name="theme-color" content="#06131d"><link rel="apple-touch-icon" href="./icon-192.png"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}html,body,#map{height:100%;margin:0}body{font-family:Arial,sans-serif;background:#06131d;color:#fff;overflow:hidden}
@@ -19,12 +19,69 @@ h1{font-size:20px;margin:0}.muted{color:#9db4bf;font-size:11px}.tabs{display:gri
 .point-icon-name{position:absolute;top:29px;left:50%;transform:translateX(-50%);background:rgba(3,12,18,.92);border:1px solid #56849a;color:#fff;font-size:9px;font-weight:bold;padding:1px 3px;border-radius:3px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 4px #0009}
 #forecast{overflow:auto}.forecast-row{display:grid;grid-template-columns:52px 1fr 48px 55px 55px 55px;gap:4px;align-items:center;padding:8px 4px;border-bottom:1px solid #24434f;font-size:11px}.forecast-head{font-weight:bold;color:#8fb5c4}.metric{background:#102a35;border-radius:5px;padding:5px;text-align:center}.big{font-size:22px;font-weight:bold}.wind-arrow{font-size:17px;display:inline-block}
 .badge{float:right;background:#0f526a;border-radius:12px;padding:3px 7px;font-size:10px}
-@media(max-width:700px){.panel{left:7px;right:7px;top:auto;bottom:55px;width:auto;max-height:50vh}.tabs{grid-template-columns:repeat(4,1fr)}#bottom{right:7px;bottom:7px}.leaflet-control-zoom{display:none}}
+/* Mobil chartplotter arayüzü */
+.mobile-topbar{display:none}
+.mobile-menu-btn,.mobile-close-btn{display:none}
+@media(max-width:700px){
+  #map{height:100vh;width:100vw}
+  .panel{
+    left:0;right:auto;top:0;bottom:0;width:min(88vw,390px);max-height:none;
+    overflow:auto;padding:14px 12px 90px;
+    border-radius:0 18px 18px 0;
+    transform:translateX(-105%);
+    transition:transform .22s ease;
+    box-shadow:10px 0 35px #000b;
+    background:rgba(4,14,22,.98);
+  }
+  .panel.open{transform:translateX(0)}
+  .panel-backdrop{display:none;position:absolute;inset:0;z-index:999;background:#0007}
+  .panel-backdrop.show{display:block}
+  .mobile-topbar{
+    display:flex;position:absolute;z-index:1001;top:10px;left:10px;right:10px;
+    justify-content:space-between;align-items:center;pointer-events:none
+  }
+  .mobile-topbar .mleft,.mobile-topbar .mright{display:flex;gap:7px;pointer-events:auto}
+  .mobile-topbar button{
+    width:44px;height:44px;padding:0;border-radius:12px;
+    background:rgba(4,14,22,.90);border:1px solid #456575;
+    font-size:21px;box-shadow:0 3px 12px #0008
+  }
+  .mobile-title{
+    padding:8px 12px;border-radius:12px;background:rgba(4,14,22,.86);
+    border:1px solid #456575;font-size:13px;font-weight:bold
+  }
+  .mobile-close-btn{display:block;float:right;width:42px;height:38px;font-size:20px}
+  .tabs{grid-template-columns:repeat(2,1fr);gap:6px;clear:both;padding-top:8px}
+  .tab{font-size:13px;padding:11px 6px}
+  .panel h1{font-size:20px;padding-right:48px}
+  .panel>.muted{font-size:11px}
+  #bottom{
+    right:10px;bottom:10px;left:auto;max-width:calc(100vw - 20px);
+    padding:8px 11px;font-size:13px;border-radius:12px
+  }
+  .leaflet-control-zoom{display:none}
+  .leaflet-control-layers{margin-top:62px!important}
+  .section .card{font-size:13px}
+  #pointList{max-height:35vh;overflow:auto}
+}
+@media(min-width:701px){
+  .panel{display:block}
+}
 </style>
 </head>
 <body>
 <div id="map"></div>
+<div class="panel-backdrop" id="panelBackdrop"></div>
+<div class="mobile-topbar">
+  <div class="mleft"><button id="openMenu" aria-label="Menü">☰</button></div>
+  <div class="mobile-title">🚤 Tekne Navigator</div>
+  <div class="mright">
+    <button id="mobileGps" aria-label="GPS">⌖</button>
+    <button id="mobileLayers" aria-label="Katmanlar">▱</button>
+  </div>
+</div>
 <div class="panel">
+<button id="closeMenu" class="mobile-close-btn" aria-label="Kapat">✕</button>
 <h1>🚤 Tekne Navigator <span class="badge">v6</span></h1>
 <div class="muted">506 navigasyon noktası • düzenlenebilir</div>
 <div class="tabs">
@@ -93,6 +150,16 @@ const POINT_KEY="tekneNav.v6.points", ROUTE_KEY="tekneNav.v6.routes", API_KEY="t
 let points=JSON.parse(localStorage.getItem(POINT_KEY)||"null")||ORIGINAL.map(x=>({...x}));
 let markers=[],boat=null,accuracy=null,target=null,route=[],routeLine=null,watch=null,addMode=false,depthMode=false,weatherPoint=null,anchor=null,anchorCircle=null,anchorLine=null,anchorAlarm=false;
 
+
+function closeMobileMenu(){
+  document.querySelector(".panel")?.classList.remove("open");
+  document.getElementById("panelBackdrop")?.classList.remove("show");
+}
+function openMobileMenu(){
+  document.querySelector(".panel")?.classList.add("open");
+  document.getElementById("panelBackdrop")?.classList.add("show");
+}
+
 const map=L.map("map",{zoomControl:true,contextmenu:false}).setView([38.5,26.7],10);
 const normal=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
 const sat=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"});
@@ -150,7 +217,7 @@ function redraw(){
   m.on("click",()=>selectPoint(i));m.on("contextmenu",e=>openEditor(i,e.latlng));
   markers.push(m);
  });
- renderList(); if(markers.length)map.fitBounds(L.featureGroup(markers).getBounds().pad(.08));
+ renderList();
  applyLabelVisibility();
 }
 function applyLabelVisibility(){
@@ -323,5 +390,20 @@ document.getElementById("anchorRadius").onchange=()=>{drawAnchor();updateAnchor(
 try{anchor=JSON.parse(localStorage.getItem("tekneNav.v7.anchor")||"null")}catch(e){anchor=null}
 redraw();startGPS();testDepthLayers();map.on("zoomend",()=>{testDepthLayers();applyLabelVisibility();});if(anchor)drawAnchor();
 </script>
-<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(()=>{});}</script></body>
+<script>
+if("serviceWorker" in navigator){
+ navigator.serviceWorker.register("./sw.js?v=14",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
+}
+</script><script>
+document.getElementById("openMenu")?.addEventListener("click",openMobileMenu);
+document.getElementById("closeMenu")?.addEventListener("click",closeMobileMenu);
+document.getElementById("panelBackdrop")?.addEventListener("click",closeMobileMenu);
+document.getElementById("mobileGps")?.addEventListener("click",()=>{locate();closeMobileMenu();});
+document.getElementById("mobileLayers")?.addEventListener("click",()=>{
+  const el=document.querySelector(".leaflet-control-layers");
+  if(el) el.classList.toggle("leaflet-control-layers-expanded");
+});
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{if(window.innerWidth<=700)closeMobileMenu()}));
+window.addEventListener("resize",()=>{if(window.innerWidth>700)closeMobileMenu();});
+</script></body>
 </html>

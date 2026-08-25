@@ -1,6 +1,6 @@
 {
   "name": "Tekne Navigator",
-  "short_name": "TekneNav",
+  "short_name": "Tekne Navigator",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
