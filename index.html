@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Tekne Navigator v17</title>
+<title>Tekne Navigator v20</title>
 <link rel="manifest" href="./manifest.json"><meta name="theme-color" content="#06131d"><link rel="apple-touch-icon" href="./icon-192.png"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}html,body,#map{height:100%;margin:0}body{font-family:Arial,sans-serif;background:#06131d;color:#fff;overflow:hidden}
@@ -108,19 +108,9 @@ html,body,#map{touch-action:pan-x pan-y!important;-webkit-user-select:none;user-
  .nav-control-card{z-index:1400;bottom:8px}.nav-control-card>div{backdrop-filter:blur(10px)}
  .mobile-title{font-size:12px}.mobile-topbar button{width:46px;height:46px}
 }
-</style><style>
-#voyageHud{position:absolute;z-index:1002;left:8px;right:8px;bottom:8px;display:none;pointer-events:none}
-#voyageHud.show{display:block}.vh{pointer-events:auto;background:rgba(3,14,22,.96);border:1px solid #4b7587;border-radius:16px;padding:9px 11px;box-shadow:0 -3px 20px #0009}
-.vht{display:flex;justify-content:space-between;align-items:center}.vhn{font-size:16px;font-weight:800}.vhs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px}.vhs div{background:#0c2531;border-radius:9px;text-align:center;padding:5px}.vhs b{display:block;font-size:14px}.vhs small{font-size:9px;opacity:.7}.vhb{display:flex;gap:6px;margin-top:7px}.vhb button{flex:1;padding:8px;border-radius:9px}
-#compassHud{position:absolute;z-index:1002;top:60px;left:50%;transform:translateX(-50%);display:none;pointer-events:none}.#compassHud.show{display:block}.ch{background:rgba(3,14,22,.94);border:1px solid #4b7587;border-radius:12px;padding:5px 12px;text-align:center}.ch b{font-size:21px}.ch small{display:block;font-size:9px;opacity:.7}
-.point-popup-card{min-width:190px}.point-popup-card button{margin:3px 2px;padding:8px 9px;border-radius:8px}
-.boat-v19{font-size:30px;line-height:40px;text-shadow:0 2px 5px #000}
-@media(max-width:700px){#voyageHud{bottom:7px}.vhs b{font-size:13px}}
-</style></head>
+</style><style id="v20css">#v20hud{position:absolute;z-index:3000;left:7px;right:7px;bottom:7px;display:none;pointer-events:none}.v20box{pointer-events:auto;background:rgba(4,14,22,.96);border:1px solid #4d7588;border-radius:15px;padding:9px;box-shadow:0 -4px 20px #000a}.v20row{display:flex;justify-content:space-between;gap:5px}.v20stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:6px}.v20stats div{background:#0d2632;border-radius:8px;padding:5px;text-align:center}.v20stats b{display:block;font-size:14px}.v20small{font-size:9px;opacity:.7}.v20buttons{display:flex;gap:5px;margin-top:6px}.v20buttons button{flex:1;padding:8px 4px;border-radius:9px}.v20course{position:absolute;z-index:3001;top:62px;left:50%;transform:translateX(-50%);display:none;background:rgba(4,14,22,.94);border:1px solid #4d7588;border-radius:10px;padding:5px 12px;text-align:center;pointer-events:none}.v20course.show{display:block}.v20boat{background:transparent!important;border:0!important}@media(max-width:700px){#map,.leaflet-container{touch-action:pan-x pan-y!important}} </style></head>
 <body>
-<div id="map"></div>
-<div id="compassHud"><div class="ch"><b id="compassDeg">000°</b><small>KURS / HEADING</small></div></div>
-<div id="voyageHud"><div class="vh"><div class="vht"><div class="vhn" id="vhName">🚤 Seyir</div><span id="vhState" class="sim-badge">HAZIR</span></div><div class="vhs"><div><b id="vhDist">—</b><small>KALAN NM</small></div><div><b id="vhBrg">—</b><small>KERTERİZ</small></div><div><b id="vhSpeed">—</b><small>HIZ KN</small></div><div><b id="vhEta">—</b><small>ETA</small></div></div><div class="vhb"><button id="vhPause">⏸ Duraklat</button><button id="vhFollow">🧭 Takip</button><button id="vhStop" class="danger">■ Durdur</button></div></div></div>
+<div id="map"></div><div id="v20course" class="v20course"><b id="v20deg">000°</b><div class="v20small">KURS</div></div><div id="v20hud"><div class="v20box"><div class="v20row"><b id="v20name">🚤 Seyir</b><span id="v20state">HAZIR</span></div><div class="v20stats"><div><b id="v20dist">—</b><span class="v20small">KALAN NM</span></div><div><b id="v20brg">—</b><span class="v20small">KERTERİZ</span></div><div><b id="v20spd">—</b><span class="v20small">HIZ KN</span></div><div><b id="v20eta">—</b><span class="v20small">ETA</span></div></div><div class="v20buttons"><button id="v20pause">⏸ Duraklat</button><button id="v20follow">🧭 Takip Açık</button><button id="v20stop" class="danger">■ Seyri durdur</button></div></div></div>
 <div class="nav-control-card" id="navOverlay">
   <div>
     <div class="nav-main" id="navMain">🎯 Hedef seçilmedi.</div>
@@ -220,13 +210,7 @@ html,body,#map{touch-action:pan-x pan-y!important;-webkit-user-select:none;user-
 </div>
 <div id="bottom">Hız: <b id="speed">-</b> kn • Kurs: <b id="course">-</b>°</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">document.getElementById('vhPause')?.addEventListener('click',v19Pause);
-document.getElementById('vhStop')?.addEventListener('click',v19Stop);
-document.getElementById('vhFollow')?.addEventListener('click',v19Follow);
-document.getElementById('startVoyage').onclick=startVoyageV19;
-document.getElementById('openMenu')?.addEventListener('click',()=>{const p=document.querySelector('.panel');p?.classList.contains('open')?closeMobileMenu():openMobileMenu()});
-map.on('click',()=>{if(window.innerWidth<=700)closeMobileMenu()});
-</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <body>
 <div id="map"></div>
 <div class="nav-control-card" id="navOverlay">
@@ -376,7 +360,7 @@ function redraw(){
    m.on('contextmenu',e=>{e.originalEvent?.preventDefault();openEditor(i,e.latlng)});
    markers.push(m);
  });
- markers.forEach((m,i)=>m.bindPopup(pointPopupV19(i),{autoPan:false,maxWidth:260})); renderList(); applyLabelVisibility();
+ renderList(); applyLabelVisibility();
 }
 function applyLabelVisibility(){
  const hide=map.getZoom()<11;
@@ -386,19 +370,11 @@ function renderList(){
  const q=(document.getElementById('search')?.value||'').toLowerCase();
  document.getElementById('pointList').innerHTML=points.map((p,i)=>({p,i})).filter(x=>(x.p.name||'').toLowerCase().includes(q)||(x.p.type||'').toLowerCase().includes(q)).slice(0,300).map(x=>`<div class="listitem" onclick="selectPoint(${x.i})"><b>${esc(x.p.name||'İsimsiz')}</b> <span class="muted">(${esc(x.p.type||'')})</span><br><span class="muted">${x.p.lat.toFixed(5)}, ${x.p.lon.toFixed(5)}</span></div>`).join('');
 }
-function pointPopupV19(i){
- const p=points[i];
- return `<div class="point-popup-card"><b>📍 ${esc(p.name||'İsimsiz')}</b><br><small>${Number(p.lat).toFixed(6)}, ${Number(p.lon).toFixed(6)}</small><br>
- <button class="primary" onclick="popupStartV19(${i})">🚤 Seyri başlat</button>
- <button onclick="popupEditV19(${i})">✏️ Düzenle</button>
- <button class="danger" onclick="popupDeleteV19(${i})">🗑 Sil</button></div>`;
-}
-function popupStartV19(i){target=points[i];weatherPoint=points[i];map.closePopup();startVoyageV19()}
-function popupEditV19(i){map.closePopup();openEditor(i)}
-function popupDeleteV19(i){if(confirm(`"${points[i].name||'Nokta'}" silinsin mi?`)){if(target===points[i])target=null;points.splice(i,1);save();redraw();map.closePopup()}}
 function selectPoint(i){
  target=points[i];weatherPoint=points[i];
- const m=markers[i]; if(m){m.bindPopup(pointPopupV19(i),{autoPan:false,maxWidth:260}).openPopup()}
+ map.flyTo([target.lat,target.lon],Math.max(map.getZoom(),15),{duration:.45});
+ markers[i]?.openTooltip?.();
+ document.getElementById('editor').innerHTML=`<div class="card"><b>📍 ${esc(target.name||'Nokta')}</b><br><button onclick="openEditor(${i})">✏️ Düzenle</button><button onclick="setTarget()">🎯 Hedef</button><button onclick="goTarget()" class="primary">🚤 Git</button><button onclick="loadWeather()">🌦 Hava</button></div>`;
  updateNav();
 }
 function openEditor(i,latlng){
@@ -487,43 +463,6 @@ function voyageTick(ts){
  voyage.raf=requestAnimationFrame(voyageTick);
 }
 
-
-const v19={running:false,paused:false,start:null,end:null,total:0,travelled:0,last:0,raf:null,follow:true,course:0,marker:null,route:null,label:null};
-function v19Speed(){const n=Number(document.getElementById('simSpeed')?.value||5);return Math.max(.5,Math.min(50,Number.isFinite(n)?n:5))}
-function v19BoatIcon(course){return L.divIcon({className:'',html:`<div class="boat-v19" style="transform:rotate(${course}deg)">🚤</div>`,iconSize:[40,40],iconAnchor:[20,20]})}
-function v19SetBoat(ll,course){if(!v19.marker)v19.marker=L.marker(ll,{icon:v19BoatIcon(course),zIndexOffset:5000,interactive:false}).addTo(map);else{v19.marker.setLatLng(ll);v19.marker.setIcon(v19BoatIcon(course))}}
-function v19DrawRoute(){if(v19.route)map.removeLayer(v19.route);if(v19.label)map.removeLayer(v19.label);v19.route=L.polyline([v19.start,v19.end],{color:'#18b8ec',weight:5,opacity:.95,dashArray:'12 8'}).addTo(map);const mid=L.latLng((v19.start.lat+v19.end.lat)/2,(v19.start.lng+v19.end.lng)/2);v19.label=L.marker(mid,{interactive:false,icon:L.divIcon({className:'',html:`<div class="route-label">🛥 ${(v19.total/1852).toFixed(2)} NM</div>`,iconAnchor:[0,0]})}).addTo(map)}
-function v19HUD(rem,brg,eta){
- document.getElementById('vhName').textContent=`🚤 ${esc(target?.name||'Seyir')}`;
- document.getElementById('vhState').textContent=v19.running?(v19.paused?'DURAKLATILDI':'SEYİR'):'DURDU';
- document.getElementById('vhDist').textContent=(rem/1852).toFixed(2);
- document.getElementById('vhBrg').textContent=`${Math.round(brg)}°`;
- document.getElementById('vhSpeed').textContent=v19Speed().toFixed(1);
- document.getElementById('vhEta').textContent=formatTime(eta);
- document.getElementById('compassDeg').textContent=`${Math.round(brg).toString().padStart(3,'0')}°`;
- document.getElementById('voyageHud').classList.add('show');document.getElementById('compassHud').style.display='block';
-}
-function startVoyageV19(){
- if(!target)return alert('Önce haritada bir hedef seç.');
- const start=realGpsLatLng?L.latLng(realGpsLatLng):(boat?boat.getLatLng():map.getCenter());
- v19.start=start;v19.end=L.latLng(target.lat,target.lon);v19.total=start.distanceTo(v19.end);v19.travelled=0;v19.last=performance.now();v19.running=true;v19.paused=false;v19.follow=true;
- v19SetBoat(start,bearing(start,v19.end));v19DrawRoute();v19HUD(v19.total,bearing(start,v19.end),v19.total/1852/v19Speed()*60);
- document.getElementById('vhPause').textContent='⏸ Duraklat';document.getElementById('vhFollow').textContent='🧭 Takip Açık';
- map.setView(start,Math.max(map.getZoom(),15),{animate:true});
- if(v19.raf)cancelAnimationFrame(v19.raf);v19.raf=requestAnimationFrame(v19Tick);
-}
-function v19Tick(ts){
- if(!v19.running||v19.paused)return;
- const dt=Math.min(.25,Math.max(0,(ts-v19.last)/1000));v19.last=ts;v19.travelled=Math.min(v19.total,v19.travelled+v19Speed()*1852/3600*dt);
- const f=v19.total?v19.travelled/v19.total:1,a=v19.start,b=v19.end,ll=L.latLng(a.lat+(b.lat-a.lat)*f,a.lng+(b.lng-a.lng)*f),brg=bearing(ll,b),rem=Math.max(0,v19.total-v19.travelled);
- v19.course=brg;v19SetBoat(ll,brg);v19HUD(rem,brg,rem/1852/v19Speed()*60);
- if(v19.follow)map.setView(ll,Math.max(map.getZoom(),15),{animate:false});
- if(f>=1){v19.running=false;document.getElementById('vhState').textContent='HEDEFE ULAŞILDI';document.getElementById('vhDist').textContent='0.00';document.getElementById('vhEta').textContent='0 dk';return}
- v19.raf=requestAnimationFrame(v19Tick)
-}
-function v19Pause(){if(!v19.running)return;v19.paused=!v19.paused;document.getElementById('vhPause').textContent=v19.paused?'▶ Devam':'⏸ Duraklat';if(!v19.paused){v19.last=performance.now();v19.raf=requestAnimationFrame(v19Tick)}}
-function v19Stop(){v19.running=false;v19.paused=false;if(v19.raf)cancelAnimationFrame(v19.raf);v19.raf=null;if(v19.route){map.removeLayer(v19.route);v19.route=null}if(v19.label){map.removeLayer(v19.label);v19.label=null}document.getElementById('voyageHud').classList.remove('show');document.getElementById('compassHud').style.display='none';if(realGpsLatLng)v19SetBoat(realGpsLatLng,0)}
-function v19Follow(){v19.follow=!v19.follow;document.getElementById('vhFollow').textContent=`🧭 Takip ${v19.follow?'Açık':'Kapalı'}`;if(v19.follow&&v19.marker)map.setView(v19.marker.getLatLng(),Math.max(map.getZoom(),15),{animate:true})}
 function gpsError(e){const msg={1:'Konum izni reddedildi. iPhone Ayarlar → Gizlilik ve Güvenlik → Konum Servisleri bölümünden izin ver.',2:'Konum alınamadı. Açık gökyüzü/GPS sinyali bekleniyor.',3:'GPS zaman aşımı. Tekrar deneyin.'}[e.code]||e.message||'GPS hatası.';document.getElementById('gpsCard').innerHTML=`<b class="warn">📍 GPS</b><br>${esc(msg)}`}
 function updateGPS(pos){
  const c=pos.coords;realGpsLatLng=L.latLng(c.latitude,c.longitude);
@@ -593,7 +532,7 @@ document.getElementById('anchorRadius').onchange=()=>{drawAnchor();updateAnchor(
 try{anchor=JSON.parse(localStorage.getItem('tekneNav.v17.anchor')||localStorage.getItem('tekneNav.v7.anchor')||'null')}catch(e){anchor=null}
 redraw();testDepthLayers();startGPS();setTimeout(()=>map.invalidateSize(),300);
 if(anchor)drawAnchor();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=19',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=20',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 
 async function queryDepth(latlng){
   const size=101, bounds=map.getBounds(), sw=bounds.getSouthWest(), ne=bounds.getNorthEast();
@@ -630,5 +569,28 @@ async function queryDepth(latlng){
 }
 
 </script>
-</body>
+<script id="v20engine">
+(function(){
+var S={run:false,pause:false,follow:true,raf:0,start:null,end:null,total:0,done:0,last:0,m:null,line:null,label:null};
+function q(id){return document.getElementById(id)}
+function tx(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function sp(){var n=Number(q('simSpeed')&&q('simSpeed').value||5);return isFinite(n)?Math.max(.5,Math.min(50,n)):5}
+function tm(x){x=Math.max(0,Math.round(x));return x<60?x+' dk':Math.floor(x/60)+' sa '+x%60+' dk'}
+function br(a,b){var r=Math.PI/180,p=a.lat*r,P=b.lat*r,d=(b.lng-a.lng)*r,y=Math.sin(d)*Math.cos(P),x=Math.cos(p)*Math.sin(P)-Math.sin(p)*Math.cos(P)*Math.cos(d);return(Math.atan2(y,x)/r+360)%360}
+function icon(d){return L.divIcon({className:'v20boat',html:'<div style="font-size:30px;line-height:40px;text-shadow:0 2px 5px #000;transform:rotate('+d+'deg)">🚤</div>',iconSize:[40,40],iconAnchor:[20,20]})}
+function boatAt(ll,d){if(!S.m)S.m=L.marker(ll,{icon:icon(d),zIndexOffset:10000,interactive:false}).addTo(map);else{S.m.setLatLng(ll);S.m.setIcon(icon(d))}}
+function clear(){if(S.line){map.removeLayer(S.line);S.line=null}if(S.label){map.removeLayer(S.label);S.label=null}}
+function route(){clear();S.line=L.polyline([S.start,S.end],{weight:5,opacity:.9,dashArray:'12 8'}).addTo(map);var m=L.latLng((S.start.lat+S.end.lat)/2,(S.start.lng+S.end.lng)/2);S.label=L.marker(m,{interactive:false,icon:L.divIcon({className:'',html:'<div style="background:rgba(4,14,22,.95);border:1px solid #45b5df;border-radius:8px;padding:3px 6px;color:#fff;font-size:11px;font-weight:800">📏 '+(S.total/1852).toFixed(2)+' NM</div>',iconSize:null})}).addTo(map)}
+function hud(rem,d){var n=rem/1852,v=sp(),e=n/v*60;q('v20name').textContent='🚤 '+tx(window.target&&target.name||'Hedef');q('v20state').textContent=S.run?(S.pause?'DURAKLATILDI':'SEYİR'):'HAZIR';q('v20dist').textContent=n.toFixed(2);q('v20brg').textContent=Math.round(d)+'°';q('v20spd').textContent=v.toFixed(1);q('v20eta').textContent=tm(e);q('v20deg').textContent=String(Math.round(d)).padStart(3,'0')+'°';q('v20hud').style.display='block';q('v20course').classList.add('show')}
+function start(){if(!window.target){alert('Önce haritada bir nokta seç.');return}var ll=window.realGpsLatLng?L.latLng(window.realGpsLatLng):(window.boat&&boat.getLatLng?boat.getLatLng():map.getCenter());S.start=ll;S.end=L.latLng(target.lat,target.lon);S.total=ll.distanceTo(S.end);S.done=0;S.last=performance.now();S.run=true;S.pause=false;S.follow=true;boatAt(ll,br(ll,S.end));route();hud(S.total,br(ll,S.end));map.setView(ll,Math.max(map.getZoom(),15),{animate:true});S.raf=requestAnimationFrame(tick)}
+function tick(t){if(!S.run||S.pause)return;var dt=Math.min(.25,Math.max(0,(t-S.last)/1000));S.last=t;S.done=Math.min(S.total,S.done+sp()*1852/3600*dt);var f=S.total?S.done/S.total:1,a=S.start,b=S.end,ll=L.latLng(a.lat+(b.lat-a.lat)*f,a.lng+(b.lng-a.lng)*f),d=br(ll,b);boatAt(ll,d);hud(Math.max(0,S.total-S.done),d);if(S.follow)map.panTo(ll,{animate:false});if(f>=1){S.run=false;q('v20state').textContent='HEDEFE ULAŞILDI';q('v20dist').textContent='0.00';q('v20eta').textContent='0 dk';return}S.raf=requestAnimationFrame(tick)}
+function pause(){if(!S.run)return;S.pause=!S.pause;q('v20pause').textContent=S.pause?'▶ Devam':'⏸ Duraklat';if(!S.pause){S.last=performance.now();S.raf=requestAnimationFrame(tick)}}
+function stop(){S.run=false;S.pause=false;if(S.raf)cancelAnimationFrame(S.raf);if(S.m){map.removeLayer(S.m);S.m=null}clear();q('v20hud').style.display='none';q('v20course').classList.remove('show');if(window.realGpsLatLng&&typeof createBoat==='function')createBoat(realGpsLatLng)}
+function follow(){S.follow=!S.follow;q('v20follow').textContent='🧭 Takip '+(S.follow?'Açık':'Kapalı');if(S.follow&&S.m)map.panTo(S.m.getLatLng(),{animate:true,duration:.3})}
+function bind(){if(!window.markers||!window.points)return;markers.forEach(function(m,i){var p=points[i];if(!m||!p)return;m.bindPopup('<div style="min-width:175px"><b>📍 '+tx(p.name||'İsimsiz')+'</b><br><small>'+Number(p.lat).toFixed(6)+', '+Number(p.lon).toFixed(6)+'</small><br><button onclick="window.__v20start('+i+')">🚤 Seyri başlat</button> <button onclick="window.__v20edit('+i+')">✏️ Düzenle</button> <button onclick="window.__v20del('+i+')">🗑 Sil</button></div>',{autoPan:false,maxWidth:250})})}
+window.__v20start=function(i){target=points[i];weatherPoint=points[i];map.closePopup();start()};window.__v20edit=function(i){map.closePopup();openEditor(i)};window.__v20del=function(i){if(confirm('Bu nokta silinsin mi?')){points.splice(i,1);save();redraw();setTimeout(bind,50);map.closePopup()}};
+function init(){q('v20pause').onclick=pause;q('v20stop').onclick=stop;q('v20follow').onclick=follow;q('startVoyage').onclick=start;q('pauseVoyage').onclick=pause;q('stopVoyage').onclick=stop;q('followBoat').onclick=follow;bind();setTimeout(bind,500);setTimeout(bind,1500);var old=window.redraw;if(old)window.redraw=function(){old.apply(this,arguments);setTimeout(bind,30)};var mb=q('openMenu');if(mb)mb.onclick=function(){document.querySelector('.panel')?.classList.contains('open')?closeMobileMenu():openMobileMenu()};}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script></body>
 </html>
