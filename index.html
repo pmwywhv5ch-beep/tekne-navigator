@@ -133,7 +133,7 @@ html,body,#map{touch-action:pan-x pan-y!important;-webkit-user-select:none;user-
 </div>
 <div class="panel">
 <button id="closeMenu" class="mobile-close-btn" aria-label="Kapat">✕</button>
-<h1>🚤 Tekne Navigator <span class="badge">v21</span></h1>
+<h1>🚤 Tekne Navigator <span class="badge">v23</span></h1>
 <div class="muted">506 navigasyon noktası • düzenlenebilir</div>
 <div class="tabs">
 <button class="tab active" data-s="points">📍 Noktalar</button>
@@ -359,11 +359,27 @@ function updateGPS(pos){
  updateNav();updateAnchor();
 }
 function locate(){
+ if(!window.isSecureContext && location.hostname!=='localhost' && location.hostname!=='127.0.0.1'){
+   return gpsError({message:'GPS için HTTPS bağlantısı gerekli. GitHub Pages adresinden açın.'});
+ }
  if(!navigator.geolocation)return gpsError({message:'Bu cihazda GPS kullanılamıyor.'});
- document.getElementById('gpsCard').innerHTML='<b class="warn">📍 GPS ALINIYOR…</b><br>Konum izni ve yüksek doğruluk isteniyor.';
- navigator.geolocation.getCurrentPosition(pos=>{updateGPS(pos);createBoat(realGpsLatLng);map.flyTo(realGpsLatLng,16,{duration:.7});document.getElementById('followBoat').dataset.gpsFollow='1';closeMobileMenu()},gpsError,{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+ const card=document.getElementById('gpsCard');
+ if(card)card.innerHTML='<b class="warn">📍 GPS ALINIYOR…</b><br>iPhone konum izni isteniyor.';
+ navigator.geolocation.getCurrentPosition(function(pos){
+   updateGPS(pos);
+   if(realGpsLatLng){
+     createBoat(realGpsLatLng);
+     map.setView(realGpsLatLng,Math.max(map.getZoom(),16),{animate:true});
+     map.invalidateSize();
+   }
+   document.getElementById('followBoat')?.setAttribute('data-gps-follow','1');
+   document.getElementById('followBoat')&&(document.getElementById('followBoat').dataset.gpsFollow='1');
+   closeMobileMenu();
+ },function(err){
+   gpsError(err);
+ },{enableHighAccuracy:true,timeout:30000,maximumAge:0});
 }
-function startGPS(){if(!navigator.geolocation)return;watch=navigator.geolocation.watchPosition(updateGPS,gpsError,{enableHighAccuracy:true,maximumAge:1000,timeout:20000})}
+function startGPS(){if(!navigator.geolocation)return;watch=navigator.geolocation.watchPosition(updateGPS,gpsError,{enableHighAccuracy:true,maximumAge:0,timeout:30000})(){if(!navigator.geolocation)return;watch=navigator.geolocation.watchPosition(updateGPS,gpsError,{enableHighAccuracy:true,maximumAge:1000,timeout:20000})}
 
 function setAnchor(){if(!realGpsLatLng&&!boat)return alert('Önce GPS konumunu alın.');const p=realGpsLatLng||boat.getLatLng();anchor={lat:p.lat,lon:p.lng,time:new Date().toISOString()};localStorage.setItem('tekneNav.v17.anchor',JSON.stringify(anchor));drawAnchor()}
 function releaseAnchor(){anchor=null;localStorage.removeItem('tekneNav.v17.anchor');if(anchorCircle){map.removeLayer(anchorCircle);anchorCircle=null}if(anchorLine){map.removeLayer(anchorLine);anchorLine=null}document.getElementById('anchorStatus').innerHTML='Sanal çapa kapalı.';document.getElementById('anchorData').innerHTML='Çapa kaldırıldı.'}
@@ -393,12 +409,12 @@ map.on('resize',()=>map.invalidateSize());map.on('click',()=>{if(window.innerWid
 document.getElementById('openMenu')?.addEventListener('click',openMobileMenu);
 document.getElementById('closeMenu')?.addEventListener('click',closeMobileMenu);
 document.getElementById('panelBackdrop')?.addEventListener('click',closeMobileMenu);
-document.getElementById('mobileGps')?.addEventListener('click',()=>{closeMobileMenu();locate()});
+document.getElementById('mobileGps')?.addEventListener('click',(e)=>{e.stopPropagation();locate()});
 document.getElementById('mobileLayers')?.addEventListener('click',()=>document.querySelector('.leaflet-control-layers')?.classList.toggle('leaflet-control-layers-expanded'));
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>show(b.dataset.s)));
 document.getElementById('search').oninput=renderList;
 document.getElementById('all').onclick=()=>{if(markers.length)map.fitBounds(L.featureGroup(markers).getBounds().pad(.08))};
-document.getElementById('gps').onclick=locate;
+document.getElementById('gps').onclick=(e)=>{e?.stopPropagation();locate()};
 document.getElementById('addMode').onclick=()=>{addMode=!addMode;document.getElementById('addMode').textContent=addMode?'✖ Ekleme modunu kapat':'➕ Nokta ekle';closeMobileMenu()};
 document.getElementById('depthMode').onclick=()=>{depthMode=!depthMode;document.getElementById('depthMode').textContent=depthMode?'✖ Derinlik ölçümünü kapat':'🌊 Derinlik ölç';closeMobileMenu()};
 document.getElementById('startVoyage').onclick=startVoyage;
@@ -417,7 +433,7 @@ document.getElementById('anchorRadius').onchange=()=>{drawAnchor();updateAnchor(
 try{anchor=JSON.parse(localStorage.getItem('tekneNav.v17.anchor')||localStorage.getItem('tekneNav.v7.anchor')||'null')}catch(e){anchor=null}
 redraw();testDepthLayers();startGPS();setTimeout(()=>map.invalidateSize(),300);
 if(anchor)drawAnchor();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=22',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=23',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 
 async function queryDepth(latlng){
   const size=101, bounds=map.getBounds(), sw=bounds.getSouthWest(), ne=bounds.getNorthEast();
@@ -484,7 +500,6 @@ function init22(){
  if(el('startVoyage'))el('startVoyage').onclick=start22;if(el('pauseVoyage'))el('pauseVoyage').onclick=pause22;if(el('stopVoyage'))el('stopVoyage').onclick=stop22;if(el('followBoat'))el('followBoat').onclick=follow22;
  bindPopups22();setTimeout(bindPopups22,400);setTimeout(bindPopups22,1200);
  var oldRedraw=window.redraw;if(oldRedraw&&!oldRedraw.__v22){window.redraw=function(){oldRedraw.apply(this,arguments);setTimeout(bindPopups22,30)};window.redraw.__v22=true}
- var mb=el('openMenu');if(mb){mb.onclick=function(e){e.stopPropagation();var p=document.querySelector('.panel');if(p&&p.classList.contains('open'))closeMobileMenu();else openMobileMenu()}}
  var cm=el('closeMenu');if(cm)cm.onclick=function(){closeMobileMenu()};
  var bd=el('panelBackdrop');if(bd)bd.onclick=function(){closeMobileMenu()};
  document.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){var sec=b.dataset.s,p=document.querySelector('.panel'),active=document.querySelector('.section.active');if(window.innerWidth<=700&&active&&active.id===sec){closeMobileMenu();return}show(sec);if(p)p.dataset.active=sec;if(window.innerWidth<=700)closeMobileMenu()}});

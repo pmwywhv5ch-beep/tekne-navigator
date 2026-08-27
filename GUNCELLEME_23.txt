@@ -1,0 +1,7 @@
+v23 düzeltme sürümü
+- v22 motorundaki ikinci hamburger click handler kaldırıldı; tek tuş aç/kapa artık çekirdek handler tarafından yönetiliyor.
+- GPS tek seferlik konum alma daha sağlam: HTTPS kontrolü, 30 sn timeout, yüksek doğruluk, haritayı doğrudan gerçek GPS LatLng üzerine setView.
+- Mobil GPS butonu olay yayılımını durduruyor.
+- Desktop GPS butonu da doğrudan locate() çağırıyor.
+- Service Worker cache v23.
+- Mevcut 506 nokta ve v22 çekirdeği korunuyor.
