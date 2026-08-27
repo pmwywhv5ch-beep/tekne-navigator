@@ -1,0 +1,1 @@
+const CACHE='tekne-navigator-v21';self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
