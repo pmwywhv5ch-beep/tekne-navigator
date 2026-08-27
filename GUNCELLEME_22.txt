@@ -1,0 +1,10 @@
+v22 temiz temel sürüm.
+- v21 dosyasındaki iki ayrı <body>, çift UI ve iki ayrı v21 seyir motoru kaldırıldı.
+- Tek HTML body + tek Leaflet yüklemesi + tek uygulama çekirdeği.
+- 506 nokta ORIGINAL veri korunuyor.
+- Harita noktası popup: Seyri başlat / Düzenle / Sil.
+- Seyir motoru izole v22 modülü.
+- GPS varsa başlangıç gerçek GPS; yoksa harita merkezi.
+- Hareketli tekne, rota, toplam/kalan NM, kerteriz, hız, ETA.
+- Takip, duraklat, durdur.
+- Mobil hamburger aynı tuşla aç/kapa; backdrop ve harita dokunuşuyla kapanma.
