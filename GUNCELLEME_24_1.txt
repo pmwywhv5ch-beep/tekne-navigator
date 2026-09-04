@@ -1,0 +1,10 @@
+V24.1 düzeltme ve navigasyon çekirdeği
+- V23 startGPS() bozuk syntax/çift çağrı yapısı kaldırıldı; tek watchPosition akışı kullanılıyor.
+- V22 ikinci seyir motoru tamamen kaldırıldı; popup seyir çağrıları yeni çekirdeğe bağlandı.
+- Course-Up / North-Up modu eklendi; leaflet-rotate 0.2.3 kullanılıyor.
+- GPS heading yoksa hareketli GPS noktalarından COG tahmini yapılabiliyor.
+- Simülasyon rotası Course-Up modunda harita yönüne bağlandı.
+- Seyir başlangıcı gerçek GPS konumunu önceliklendiriyor.
+- Sanal çapa alarmında kullanıcı etkileşimi sonrası ses/titreşim denemesi eklendi ve 10 sn alarm throttling uygulandı.
+- PWA manifest v24.1; Service Worker uygulama shell + runtime cache ile güncellendi.
+- Harita/EMODnet/Open-Meteo gibi uzak servisler gerçek offline veri garantisi vermez; runtime cache yalnızca daha önce alınan kaynakları saklar.
